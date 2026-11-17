@@ -33,6 +33,7 @@
   {
     "title": "CyberNest SOAR",
     "slug": "cybernest-soar",
+    "seoTitle": "CyberNest SOAR · Open-Source Security Orchestration Platform",
     "subtitle": "AI-Enhanced Security Orchestration Platform",
     "description": "Open-source SOAR platform integrating SIEM, EDR, and NDR telemetry with automated incident response workflows. Built as a team project with containerized microservices architecture.",
     "role": "Cybersecurity Team Lead · SOAR Architect",
@@ -58,11 +59,6 @@
       "SOAR",
       "SIEM",
       "Security Automation"
-    ],
-    "metrics": [
-      "219K events analyszed",
-      "350 alerts generated",
-      "90% accuracy"
     ],
     "github": "https://github.com/CyberNest-SOAR/CyberNest-Soar",
     "screenshots": [],

@@ -81,7 +81,7 @@ npm run portfolio list
 npm run dev:admin    # starts both Astro + API server
 ```
 
-Then open `http://localhost:4321/portfolio-site/admin/`
+Then open `http://localhost:4321/admin/`
 
 You get a dashboard with stats, filterable content lists, and forms to create/edit/delete items. Changes write directly to `portfolio-data/`.
 

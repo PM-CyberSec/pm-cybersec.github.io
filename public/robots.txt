@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://PM-CyberSec.github.io/portfolio-site/sitemap-index.xml
+Sitemap: https://pm-cybersec.github.io/sitemap-index.xml

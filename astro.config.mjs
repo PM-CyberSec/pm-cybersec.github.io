@@ -5,8 +5,8 @@ import { existsSync } from 'fs';
 const isDev = process.env.NODE_ENV !== 'production';
 
 export default defineConfig({
-  site: 'https://PM-CyberSec.github.io',
-  base: '/portfolio-site',
+  site: 'https://pm-cybersec.github.io',
+  base: '/',
   integrations: [tailwind({ applyBaseStyles: false })],
   // Exclude admin page from production builds
   ...(isDev ? {} : {

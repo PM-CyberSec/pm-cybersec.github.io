@@ -12,7 +12,7 @@ export function getStaticPaths() {
   return blog.map(b => ({ params: { slug: b.slug } }));
 }
 
-const base = import.meta.env.BASE_URL;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '') || '';
 const { slug } = Astro.params;
 const post = blog.find(b => b.slug === slug);
 
@@ -31,7 +31,7 @@ function processInternalLinks(md) {
   return md.replace(/\[\[([^\]]+)\]\]/g, (match, ref) => {
     const item = allItems.find(i => i.slug === ref || i.title === ref);
     if (item) return `[${item.title}](${item._url})`;
-    return `[${ref}](${base})`;
+    return `[${ref}](${base}/)`;
   });
 }
 
@@ -42,7 +42,10 @@ if (content.startsWith('---')) {
   if (end !== -1) content = content.substring(end + 3).trim();
 }
 
-const htmlContent = marked.parse(processInternalLinks(content));
+const rawHtml = marked.parse(processInternalLinks(content));
+// The hero already renders the article title as the page H1, so drop the
+// duplicate leading markdown H1 from the body.
+const htmlContent = rawHtml.replace(/^\s*<h1[^>]*>[\s\S]*?<\/h1>\s*/, '');
 
 function slugifyHeading(text: string) {
   const base = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -98,7 +101,7 @@ const relatedProjects = post.relatedProjects?.length
   : [];
 const relatedPosts = blog.filter(b => b.slug !== slug && (b.tags||[]).some(t => (post.tags||[]).includes(t))).slice(0, 2);
 
-// Resolve cover image: meta pic may already include base (/portfolio-site/...) or be relative
+// Resolve cover image: meta pic may already include base (/) or be relative
 const picUrl = post.pic
   ? (post.pic.startsWith('http') || post.pic.startsWith('/') ? post.pic : `${base}/${post.pic}`)
   : null;
@@ -125,7 +128,7 @@ const articleThemeStyle = [
 
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4 no-print">
       <div class="flex items-center gap-2 text-xs text-[var(--text-dim)]">
-        <a href={base} class="hover:text-accent transition">Profile</a>
+        <a href={base || '/'} class="hover:text-accent transition">Profile</a>
         <span>/</span>
         <a href={`${base}/blog`} class="hover:text-accent transition">Blog</a>
         <span>/</span>

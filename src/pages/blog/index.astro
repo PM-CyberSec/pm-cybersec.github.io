@@ -5,7 +5,7 @@ import Footer from '../../components/Footer.astro';
 import blog from '../../data/blog.json';
 import { getBlogTheme } from '../../lib/blog-theme';
 
-const base = import.meta.env.BASE_URL;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '') || '';
 const categories = [...new Set(blog.map(b => b.category))];
 ---
 <Layout title="Blog · Paula Maged" description="Articles on SOC operations, detection engineering, incident response, and security tooling.">
@@ -17,7 +17,7 @@ const categories = [...new Set(blog.map(b => b.category))];
     <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[var(--bg)]" />
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6 relative z-10 w-full">
       <div class="flex items-center gap-2 text-xs text-[var(--text-dim)] mb-6">
-        <a href={base} class="hover:text-accent transition">Profile</a>
+        <a href={base || '/'} class="hover:text-accent transition">Profile</a>
         <span>/</span>
         <span class="text-[var(--text-muted)]">Blog</span>
       </div>

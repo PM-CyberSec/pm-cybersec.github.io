@@ -11,7 +11,7 @@ export function getStaticPaths() {
   return investigations.map(i => ({ params: { slug: i.slug } }));
 }
 
-const base = import.meta.env.BASE_URL;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '') || '';
 const { slug } = Astro.params;
 const investigation = investigations.find(i => i.slug === slug);
 
@@ -30,7 +30,7 @@ function processInternalLinks(md) {
   return md.replace(/\[\[([^\]]+)\]\]/g, (match, ref) => {
     const item = allItems.find(i => i.slug === ref || i.title === ref);
     if (item) return `[${item.title}](${item._url})`;
-    return `[${ref}](${base})`;
+    return `[${ref}](${base}/)`;
   });
 }
 
@@ -48,12 +48,12 @@ const relatedBlogs = investigation.relatedBlogs?.length
   ? blog.filter(b => investigation.relatedBlogs.includes(b.slug))
   : [];
 ---
-<Layout title={`${investigation.title} · Investigations`} description={investigation.summary}>
+<Layout title={investigation.seoTitle || `${investigation.title} · Investigations`} description={investigation.summary}>
   <Nav />
 
   <article class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-24">
     <div class="flex items-center gap-2 text-xs text-[var(--text-dim)] mb-6">
-      <a href={base} class="hover:text-accent transition">Profile</a>
+      <a href={base || '/'} class="hover:text-accent transition">Profile</a>
       <span>/</span>
       <a href={`${base}/investigations`} class="hover:text-accent transition">Investigations</a>
       <span>/</span>
@@ -98,8 +98,8 @@ const relatedBlogs = investigation.relatedBlogs?.length
           <h3 class="text-accent text-xs font-mono uppercase tracking-wider mb-2">Key Findings</h3>
           <ul class="space-y-2">
             {investigation.keyFindings.map(f => (
-              <li class="text-sm text-[var(--text-muted)] flex gap-2">
-                <span class="text-accent mt-1 flex-shrink-0">&#x25B8;</span>
+              <li class="text-sm text-[var(--text-muted)] flex items-baseline gap-2">
+                <span class="text-accent flex-shrink-0">&#x25B8;</span>
                 <span>{f}</span>
               </li>
             ))}

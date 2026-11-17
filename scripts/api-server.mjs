@@ -289,5 +289,5 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Portfolio API: http://localhost:${PORT}`);
-  console.log(`Admin UI: http://localhost:4321/portfolio-site/admin/`);
+  console.log(`Admin UI: http://localhost:4321/admin/`);
 });

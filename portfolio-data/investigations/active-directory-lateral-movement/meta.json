@@ -1,6 +1,7 @@
 {
   "title": "Active Directory Lateral Movement",
   "slug": "active-directory-lateral-movement",
+  "seoTitle": "AD Lateral Movement: Kerberoasting & Pass-the-Hash Detection",
   "category": "Windows",
   "date": "2026-09-10",
   "context": "Personal Security Lab",
@@ -14,14 +15,14 @@
     "BloodHound"
   ],
   "keyFindings": [
-    "Kerberoasting tickets have detectable TGS request patterns in DC logs",
-    "Pass-the-Hash leaves NTLM authentication anomalies that can be correlated",
+    "Kerberoasting produces Event ID 4769 service-ticket requests with RC4 encryption (0x17)",
+    "Pass-the-Hash appears as Event ID 4624 network logons (Type 3, NTLM) plus 4776 validation on the DC",
     "BloodHound graph analysis reveals shortest attack paths for privilege escalation",
-    "Detection rules should focus on abnormal TGS request volumes and NTLM logon patterns"
+    "Detection rules should focus on abnormal 4769 request volumes and NTLM logon patterns"
   ],
   "mitreTechniques": [
     "T1550.002",
-    "T1558",
+    "T1558.003",
     "T1021.002"
   ],
   "tools": [

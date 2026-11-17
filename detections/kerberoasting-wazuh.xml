@@ -1,0 +1,13 @@
+<group name="windows,kerberos,attack,">
+  <rule id="100100" level="10">
+    <if_group>windows</if_group>
+    <field name="win.system.eventID">^4769$</field>
+    <field name="win.eventdata.ticketEncryptionType">^0x17$</field>
+    <field name="win.eventdata.status">^0x0$</field>
+    <field name="win.eventdata.serviceName" negate="yes">\$$|krbtgt</field>
+    <description>Possible Kerberoasting: RC4 service ticket requested</description>
+    <mitre>
+      <id>T1558.003</id>
+    </mitre>
+  </rule>
+</group>

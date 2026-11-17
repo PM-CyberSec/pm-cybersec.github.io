@@ -1,0 +1,5 @@
+index=wineventlog source="WinEventLog:Security" EventCode=4769
+  Ticket_Encryption_Type=0x17 Service_Name!="*$" Service_Name!="krbtgt"
+| bin _time span=10m
+| stats dc(Service_Name) AS distinct_spns, count BY _time, Account_Name, Client_Address
+| where distinct_spns > 5

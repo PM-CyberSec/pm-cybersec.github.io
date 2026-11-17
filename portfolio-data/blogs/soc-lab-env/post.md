@@ -86,7 +86,7 @@ Response
 
 ---
 
-# 2. Defining the Security Requirements
+## 2. Defining the Security Requirements
 
 Before designing the network, I defined several requirements for the environment.
 
@@ -120,7 +120,7 @@ These requirements led to the main architectural question:
 
 ---
 
-# 3. Designing the Network Architecture
+## 3. Designing the Network Architecture
 
 There are two common situations I expect to encounter while using the lab.
 
@@ -170,7 +170,7 @@ This distinction is important:
 
 ---
 
-# 4. Why I Didn't Want a Single Fixed Topology
+## 4. Why I Didn't Want a Single Fixed Topology
 
 A single permanent topology would work for one type of experiment, but it would become restrictive as the lab grows.
 
@@ -211,11 +211,11 @@ Rather than maintaining three completely different physical environments, I want
 
 ---
 
-# 5. Evaluating the Networking Options
+## 5. Evaluating the Networking Options
 
 There are several ways to create and manage Linux bridges.
 
-## `ip` commands
+### `ip` commands
 
 A bridge can be created directly:
 
@@ -234,7 +234,7 @@ For the final lab architecture, it isn't enough.
 
 ---
 
-## NetworkManager / `nmcli`
+### NetworkManager / `nmcli`
 
 NetworkManager provides persistent connection profiles and can manage Linux bridges.
 
@@ -255,7 +255,7 @@ That led to the next idea.
 
 ---
 
-# 6. Treating the Lab Topology as Configuration
+## 6. Treating the Lab Topology as Configuration
 
 Instead of hard-coding one network architecture, I wanted to describe the desired architecture as configuration.
 
@@ -326,7 +326,7 @@ The goal is eventually to make changing the environment a configuration change r
 
 ---
 
-# 7. Validating the Network Before Automating It
+## 7. Validating the Network Before Automating It
 
 Before introducing automation, I wanted to verify that the underlying networking actually behaved as expected.
 
@@ -379,7 +379,7 @@ Only after those questions were answered did automation become useful.
 
 ---
 
-# 8. Connecting the Virtual Machines
+## 8. Connecting the Virtual Machines
 
 Creating a bridge isn't enough. The VM's virtual network interface also has to connect to it.
 
@@ -409,7 +409,7 @@ The virtual NIC is connected to the Linux bridge, while the operating system ins
 
 ---
 
-# 9. Configuring the VM Through libvirt
+## 9. Configuring the VM Through libvirt
 
 The same configuration can also be inspected or modified through libvirt.
 
@@ -459,7 +459,7 @@ I can therefore change which network a VM participates in without rebuilding the
 
 ---
 
-# 10. Assigning IP Addresses
+## 10. Assigning IP Addresses
 
 The bridge and the VM are separate networking objects.
 
@@ -496,7 +496,7 @@ This allows the firewall to enforce communication policies between security zone
 
 ---
 
-# 11. Security Validation
+## 11. Security Validation
 
 After creating the topology, I don't want to assume that segmentation works simply because the diagram looks correct.
 
@@ -547,7 +547,7 @@ It is:
 
 ---
 
-# 12. Making the Environment Recoverable
+## 12. Making the Environment Recoverable
 
 Network isolation solves one problem, but experiments can still modify or break the operating systems.
 
@@ -583,7 +583,7 @@ This allows the same environment to be reused for multiple experiments while mai
 
 ---
 
-# 13. Resource Constraints
+## 13. Resource Constraints
 
 The lab is also intentionally built under constrained resources.
 
@@ -608,7 +608,7 @@ It is to recreate the **security interactions and operational workflows** that m
 
 ---
 
-# 14. Current Architecture
+## 14. Current Architecture
 
 The resulting environment is designed around several layers:
 
@@ -639,7 +639,7 @@ It is the ability to control how these components interact.
 
 ---
 
-# 15. What Comes Next
+## 15. What Comes Next
 
 With the networking foundation established, the next layer is telemetry.
 

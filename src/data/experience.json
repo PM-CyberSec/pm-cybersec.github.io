@@ -11,10 +11,10 @@
       "Engineered a REST API for real-time data ingestion and visualization, demonstrating backend development and integration skills",
       "Provided Tier 1 technical support and network troubleshooting, resolving server infrastructure issues for enterprise operations"
     ],
-    "pic": "/portfolio-site/certs/ElDahra_internship.jpeg"
+    "pic": "/certs/ElDahra_internship.jpeg"
   },
   {
-    "title": "SOC Intern",
+    "title": "SOC Training",
     "company": "Archon Vanguard",
     "type": "Internship",
     "timeline": "Sep 2026 — Oct 2026",
@@ -26,10 +26,10 @@
       "Investigated phishing attempts, web security anomalies, and initial access/persistence vectors across Windows and Linux environments",
       "Applied Cyber Kill Chain and MITRE ATT&CK frameworks to structure threat detection, alert triage, and incident response lifecycles"
     ],
-    "pic": "/portfolio-site/certs/ArchonVanguard-intern-cert.png"
+    "pic": "/certs/ArchonVanguard-intern-cert.png"
   },
   {
-    "title": "FortiGate Security Intern",
+    "title": "FortiGate Security Training",
     "company": "NTI-ITIDA",
     "type": "Intern",
     "timeline": "Sep 2026 - Oct 2026",
@@ -41,7 +41,7 @@
       "Analyzed security and network traffic behavior using FortiGate monitoring, logging, and diagnostic capabilities",
       "Practiced enterprise firewall administration and troubleshooting workflows using FortiOS 7.6"
     ],
-    "pic": "/portfolio-site/certs/FortinetSecurity-NTI.png"
+    "pic": "/certs/FortinetSecurity-NTI.png"
   },
   {
     "title": "B.Tech. Networking & Cybersecurity",
