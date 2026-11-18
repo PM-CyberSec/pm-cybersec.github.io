@@ -3,6 +3,8 @@ import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/Nav.astro';
 import Footer from '../../components/Footer.astro';
 import projects from '../../data/projects.json';
+import { Image } from 'astro:assets';
+import projectsBanner from '../../assets/images/new.jpeg';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '') || '';
 ---
@@ -10,7 +12,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '') || '';
   <Nav />
 
   <section class="relative overflow-hidden min-h-[35vh] flex flex-col justify-end">
-    <img src={`${base}/images/new.jpeg`} alt="" class="absolute inset-0 w-full h-full object-cover" />
+    <Image src={projectsBanner} alt="" width={2064} height={512} widths={[640, 1024, 1600, 2064]} sizes="100vw" loading="eager" decoding="async" class="absolute inset-0 w-full h-full object-cover" />
     <div class="absolute inset-0 bg-[var(--bg)]/50" />
     <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[var(--bg)]" />
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6 relative z-10 w-full">

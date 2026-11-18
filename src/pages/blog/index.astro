@@ -4,6 +4,9 @@ import Nav from '../../components/Nav.astro';
 import Footer from '../../components/Footer.astro';
 import blog from '../../data/blog.json';
 import { getBlogTheme } from '../../lib/blog-theme';
+import { Image } from 'astro:assets';
+import blogBanner from '../../assets/images/4-improved.jpeg';
+import { resolveImage } from '../../lib/images';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '') || '';
 const categories = [...new Set(blog.map(b => b.category))];
@@ -12,7 +15,7 @@ const categories = [...new Set(blog.map(b => b.category))];
   <Nav />
 
   <section class="relative overflow-hidden min-h-[35vh] flex flex-col justify-end">
-    <img src={`${base}/images/4-improved.jpeg`} alt="" class="absolute inset-0 w-full h-full object-cover" />
+    <Image src={blogBanner} alt="" width={2064} height={512} widths={[640, 1024, 1600, 2064]} sizes="100vw" loading="eager" decoding="async" class="absolute inset-0 w-full h-full object-cover" />
     <div class="absolute inset-0 bg-[var(--bg)]/50" />
     <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[var(--bg)]" />
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6 relative z-10 w-full">
@@ -44,7 +47,7 @@ const categories = [...new Set(blog.map(b => b.category))];
           data-category={post.category}
           style={`--card-accent:${theme.accent};--card-soft:${theme.soft};--card-border:${theme.border};--card-glow:${theme.glow};--card-delay:${index * 45}ms;`}
         >
-          {post.pic && <img src={post.pic} alt={post.title} loading="lazy" class="w-full h-40 object-cover" />}
+          {post.pic && <Image src={resolveImage(post.pic)} alt={post.title} width={640} height={360} loading="lazy" decoding="async" class="w-full h-40 object-cover" />}
           <div class="p-5">
           <div class="flex items-center gap-2 mb-2">
             <span class="text-[10px] px-2 py-0.5 border rounded-badge blog-cat">{post.category}</span>

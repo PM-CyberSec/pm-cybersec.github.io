@@ -3,6 +3,9 @@ import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/Nav.astro';
 import Footer from '../../components/Footer.astro';
 import investigations from '../../data/investigations.json';
+import { Image } from 'astro:assets';
+import investigationsBanner from '../../assets/images/1-improved.jpeg';
+import { resolveImage } from '../../lib/images';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '') || '';
 const categories = [...new Set(investigations.map(i => i.category))];
@@ -11,7 +14,7 @@ const categories = [...new Set(investigations.map(i => i.category))];
   <Nav />
 
   <section class="relative overflow-hidden min-h-[35vh] flex flex-col justify-end">
-    <img src={`${base}/images/1-improved.jpeg`} alt="" class="absolute inset-0 w-full h-full object-cover" />
+    <Image src={investigationsBanner} alt="" width={2064} height={512} widths={[640, 1024, 1600, 2064]} sizes="100vw" loading="eager" decoding="async" class="absolute inset-0 w-full h-full object-cover" />
     <div class="absolute inset-0 bg-[var(--bg)]/50" />
     <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[var(--bg)]" />
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6 relative z-10 w-full">
@@ -36,7 +39,7 @@ const categories = [...new Set(investigations.map(i => i.category))];
     <div class="grid sm:grid-cols-2 gap-4" id="investigation-grid">
       {investigations.map(inv => (
         <a href={`${base}/investigations/${inv.slug}`} class:list={["group block bg-[var(--bg-card)] border border-[var(--border)] rounded-card overflow-hidden hover:border-[var(--border-strong)] transition investigation-card"]} data-category={inv.category}>
-          {inv.pic && <img src={inv.pic} alt={inv.title} class="w-full h-40 object-cover" />}
+          {inv.pic && <Image src={resolveImage(inv.pic)} alt={inv.title} width={640} height={360} loading="lazy" decoding="async" class="w-full h-40 object-cover" />}
           <div class="p-5">
           <div class="flex items-center gap-2 mb-2">
             <span class="text-[10px] px-2 py-0.5 bg-accent/20 text-accent border border-accent/30 rounded-badge">{inv.category}</span>

@@ -6,6 +6,8 @@ import Card from '../../components/Card.astro';
 import ArchitectureFlow from '../../components/ArchitectureFlow.astro';
 import ProjectTree from '../../components/ProjectTree.astro';
 import projects from '../../data/projects.json';
+import { Image } from 'astro:assets';
+import { resolveImage } from '../../lib/images';
 
 export function getStaticPaths() {
   return projects.map(p => ({ params: { slug: p.slug } }));
@@ -105,10 +107,13 @@ const relatedProjects = projects.filter(p => p.slug !== slug && p.technologies.s
 
           {architectureImage && (
             <figure class="bg-[var(--bg-card)] border border-[var(--border)] rounded-card p-3">
-              <a href={architectureImage} target="_blank" rel="noopener noreferrer" class="group block">
-                <img
-                  src={architectureImage}
+              <a href={architectureImage} class="group block">
+                <Image
+                  src={resolveImage(architecture.image.src)}
                   alt={architecture.image?.alt || `${project.title} architecture diagram`}
+                  width={1200}
+                  height={675}
+                  fit="contain"
                   loading="lazy"
                   decoding="async"
                   class="w-full h-auto rounded-btn border border-[var(--border)] group-hover:border-[var(--border-strong)] transition-all duration-300"

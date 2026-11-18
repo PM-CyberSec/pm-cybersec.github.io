@@ -11,6 +11,8 @@ import projects from '../data/projects.json';
 import investigations from '../data/investigations.json';
 import blog from '../data/blog.json';
 import { Image } from 'astro:assets';
+import profilePicture from '../assets/ProfilePicture.jpeg';
+import { resolveImage } from '../lib/images';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '') || '';
 const featuredProjects = projects.filter(p => p.featured);
@@ -45,11 +47,11 @@ const approachSteps = [
         <div class="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8">
           <div class="relative shrink-0 w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32">
             <div class="absolute -inset-2 rounded-full bg-gradient-to-tr from-accent/30 via-accent/5 to-transparent blur-xl" aria-hidden="true"></div>
-            <img
-              src={`${base}/ProfilePicture.jpeg`}
+            <Image
+              src={profilePicture}
               alt={`Portrait of ${profile.name}`}
-              width="594"
-              height="715"
+              width={256}
+              height={308}
               loading="eager"
               decoding="async"
               fetchpriority="high"
@@ -75,7 +77,7 @@ const approachSteps = [
           </a>
           {profile.links?.linkedin && <a href={profile.links.linkedin} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-5 py-2.5 border border-[var(--border-strong)] text-[var(--text-muted)] text-sm rounded-btn hover:border-accent hover:text-accent transition-all duration-300">LinkedIn</a>}
           {profile.links?.github && <a href={profile.links.github} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-5 py-2.5 border border-[var(--border-strong)] text-[var(--text-muted)] text-sm rounded-btn hover:border-accent hover:text-accent transition-all duration-300">GitHub</a>}
-          {profile.links?.resume && <a href={profile.links.resume} download target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-5 py-2.5 border border-[var(--border-strong)] text-[var(--text-muted)] text-sm rounded-btn hover:border-accent hover:text-accent transition-all duration-300">Download CV</a>}
+          {profile.links?.resume && <a href={profile.links.resume} download class="inline-flex items-center gap-2 px-5 py-2.5 border border-[var(--border-strong)] text-[var(--text-muted)] text-sm rounded-btn hover:border-accent hover:text-accent transition-all duration-300">Download CV</a>}
           {profile.links?.email && <a href={`mailto:${profile.links.email}`} class="inline-flex items-center gap-2 px-5 py-2.5 border border-[var(--border-strong)] text-[var(--text-muted)] text-sm rounded-btn hover:border-accent hover:text-accent transition-all duration-300">Email</a>}
         </div>
 
@@ -158,7 +160,7 @@ const approachSteps = [
       <div class="grid sm:grid-cols-2 gap-4">
         {latestInvestigations.map(inv => (
           <Card href={`${base}/investigations/${inv.slug}`} padding="5" class="group block overflow-hidden">
-            {inv.pic && <img src={inv.pic} alt={inv.title} loading="lazy" decoding="async" class="w-full h-36 object-cover" />}
+            {inv.pic && <Image src={resolveImage(inv.pic)} alt={inv.title} width={640} height={360} loading="lazy" decoding="async" class="w-full h-36 object-cover" />}
             <div class="p-5">
             <div class="flex items-center gap-2 mb-2">
               <span class="text-[10px] px-2 py-0.5 bg-accent/20 text-accent border border-accent/30 rounded-badge">{inv.category}</span>
@@ -197,7 +199,7 @@ const approachSteps = [
       <div class="space-y-4">
         {experience.filter(exp => exp.type !== 'Education').map(exp => (
           <Card padding="5" class="flex flex-col sm:flex-row sm:items-start gap-4">
-            {exp.pic && <a href={exp.pic} target="_blank" rel="noopener noreferrer" class="flex-shrink-0"><img src={exp.pic} alt={exp.company} loading="lazy" decoding="async" class="w-14 h-14 object-contain rounded-badge hover:opacity-80 transition-all duration-300" /></a>}
+            {exp.pic && <a href={exp.pic} target="_blank" rel="noopener noreferrer" class="flex-shrink-0"><Image src={resolveImage(exp.pic)} alt={exp.company} width={112} height={112} fit="contain" loading="lazy" decoding="async" class="w-14 h-14 object-contain rounded-badge hover:opacity-80 transition-all duration-300" /></a>}
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
                 <h3 class="text-[var(--text)] font-semibold text-sm">{exp.title}</h3>
@@ -226,7 +228,7 @@ const approachSteps = [
       <div class="space-y-4">
         {experience.filter(exp => exp.type === 'Education').map(exp => (
           <Card padding="5" class="flex flex-col sm:flex-row sm:items-start gap-4">
-            {exp.pic && <a href={exp.pic} target="_blank" rel="noopener noreferrer" class="flex-shrink-0"><img src={exp.pic} alt={exp.company} loading="lazy" decoding="async" class="w-14 h-14 object-contain rounded-badge hover:opacity-80 transition-all duration-300" /></a>}
+            {exp.pic && <a href={exp.pic} class="flex-shrink-0"><Image src={resolveImage(exp.pic)} alt={exp.company} width={112} height={112} fit="contain" loading="lazy" decoding="async" class="w-14 h-14 object-contain rounded-badge hover:opacity-80 transition-all duration-300" /></a>}
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
                 <h3 class="text-[var(--text)] font-semibold text-sm">{exp.title}</h3>
@@ -305,7 +307,7 @@ const approachSteps = [
       <div class="grid sm:grid-cols-2 gap-4">
         {certifications.map(cert => (
           <Card padding="5" class="flex items-center gap-4">
-            {cert.pic && <a href={cert.pic} target="_blank" rel="noopener noreferrer" class="flex-shrink-0"><img src={cert.pic} alt={cert.name} loading="lazy" decoding="async" class="w-14 h-14 object-contain rounded-badge hover:opacity-80 transition-all duration-300" /></a>}
+            {cert.pic && <a href={cert.pic} target="_blank" rel="noopener noreferrer" class="flex-shrink-0"><Image src={resolveImage(cert.pic)} alt={cert.name} width={112} height={112} fit="contain" loading="lazy" decoding="async" class="w-14 h-14 object-contain rounded-badge hover:opacity-80 transition-all duration-300" /></a>}
             <div class="flex-1 min-w-0">
               <h3 class="text-sm font-semibold text-[var(--text)]">{cert.name}</h3>
               <p class="text-xs text-[var(--text-dim)]">{cert.issuer} · {cert.date}</p>
@@ -334,7 +336,7 @@ const approachSteps = [
       <div class="grid sm:grid-cols-2 gap-4">
         {latestBlogs.length > 0 ? latestBlogs.map(post => (
           <Card href={`${base}/blog/${post.slug}`} padding="5" class="group block overflow-hidden">
-            {post.pic && <img src={post.pic} alt={post.title} loading="lazy" decoding="async" class="w-full h-36 object-cover" />}
+            {post.pic && <Image src={resolveImage(post.pic)} alt={post.title} width={640} height={360} loading="lazy" decoding="async" class="w-full h-36 object-cover" />}
             <div class="p-5">
             <div class="flex items-center gap-2 mb-2">
               <span class="text-[10px] px-2 py-0.5 bg-accent/20 text-accent border border-accent/30 rounded-badge">{post.category}</span>

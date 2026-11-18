@@ -51,7 +51,7 @@ const { nodes = [], depth = 0 } = Astro.props;
         <path d="M9 1.5v3h3" stroke-linejoin="round" />
       </svg>
       {node.href ? (
-        <a href={node.href} target="_blank" rel="noopener noreferrer" class="font-mono text-xs text-[var(--text-muted)] hover:text-accent transition truncate">
+        <a href={node.href} class="font-mono text-xs text-[var(--text-muted)] hover:text-accent transition truncate">
           {node.name}
         </a>
       ) : (
