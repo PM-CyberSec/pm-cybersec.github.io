@@ -6,9 +6,9 @@ import blog from '../../data/blog.json';
 import projects from '../../data/projects.json';
 import investigations from '../../data/investigations.json';
 import { getBlogTheme } from '../../lib/blog-theme';
-import { resolveImage } from '../../lib/images';
+import { resolveImage, resolveImageByName } from '../../lib/images';
 import { marked } from 'marked';
-import { Image } from 'astro:assets';
+import { Image, getImage } from 'astro:assets';
 
 export function getStaticPaths() {
   return blog.map(b => ({ params: { slug: b.slug } }));
@@ -37,6 +37,25 @@ function processInternalLinks(md) {
   });
 }
 
+/**
+ * Convert Obsidian-style image embeds to Markdown before parsing:
+ *   ![[diagram.png]]                 -> ![diagram.png](/images/diagram.png)
+ *   ![[diagram.png|Figure 1 caption]] -> image with a caption
+ */
+function processWikiImages(md) {
+  return md.replace(/!\[\[([^\]]+)\]\]/g, (match, inner: string) => {
+    const [rawPath, ...aliasParts] = inner.split('|');
+    const path = rawPath.trim();
+    if (!path) return match;
+
+    const caption = aliasParts.join('|').trim();
+    const src = resolveImageByName(path);
+    const title = caption ? ` "${caption.replace(/"/g, '&quot;')}"` : '';
+
+    return `![${caption}](${src}${title})`;
+  });
+}
+
 // Strip YAML frontmatter if present
 let content = post.content || '';
 if (content.startsWith('---')) {
@@ -44,7 +63,7 @@ if (content.startsWith('---')) {
   if (end !== -1) content = content.substring(end + 3).trim();
 }
 
-const rawHtml = marked.parse(processInternalLinks(content));
+const rawHtml = marked.parse(processInternalLinks(processWikiImages(content)));
 // The hero already renders the article title as the page H1, so drop the
 // duplicate leading markdown H1 from the body.
 const htmlContent = rawHtml.replace(/^\s*<h1[^>]*>[\s\S]*?<\/h1>\s*/, '');
@@ -66,6 +85,100 @@ function decodeEntities(value: string) {
     .replace(/&amp;/g, '&');
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function getAttribute(tag: string, name: string): string | null {
+  const match = tag.match(new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, 'i'));
+  if (!match) return null;
+  return decodeEntities(match[1] ?? match[2] ?? match[3] ?? '');
+}
+
+const contentImageWidths = [480, 768, 1024, 1360, 1600];
+const contentImageSizes = '(max-width: 900px) 100vw, (max-width: 1472px) calc(100vw - 300px), 1164px';
+
+/**
+ * Rewrite images embedded in blog Markdown so local images go through Astro's
+ * optimizer (WebP + srcset). A Markdown title becomes a visible caption:
+ *   ![Alt text](/images/screenshot.png "Figure 1 — Lab topology")
+ */
+async function renderContentImage(tag: string, allowCaption: boolean): Promise<string> {
+  if (/data-image-component=/i.test(tag)) return tag;
+
+  const src = getAttribute(tag, 'src');
+  if (!src) return tag;
+
+  const alt = getAttribute(tag, 'alt') ?? '';
+  const title = getAttribute(tag, 'title');
+  const resolved = resolveImage(src);
+
+  let imageTag = tag;
+
+  if (typeof resolved === 'object') {
+    const widths = [...new Set([
+      ...contentImageWidths.filter((width) => width < resolved.width),
+      resolved.width,
+    ])].sort((a, b) => a - b);
+
+    const optimized = await getImage({
+      src: resolved,
+      widths,
+      sizes: contentImageSizes,
+      format: 'webp',
+    });
+
+    imageTag = `<img src="${optimized.src}" srcset="${optimized.srcSet.attribute}" sizes="${contentImageSizes}" width="${optimized.attributes.width}" height="${optimized.attributes.height}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" data-image-component="true" />`;
+  } else {
+    if (!/\bloading=/i.test(imageTag)) imageTag = imageTag.replace(/<img\b/i, '<img loading="lazy"');
+    if (!/\bdecoding=/i.test(imageTag)) imageTag = imageTag.replace(/<img\b/i, '<img decoding="async"');
+  }
+
+  const fullSrc = typeof resolved === 'object' ? resolved.src : resolved;
+  const label = alt ? `Open image: ${alt}` : 'Open image full size';
+  const linkClass = allowCaption ? 'blog-image-link blog-image-link--block' : 'blog-image-link blog-image-link--inline';
+  const linkedTag = `<a class="${linkClass}" href="${escapeHtml(fullSrc)}" aria-label="${escapeHtml(label)}" data-lightbox-link>${imageTag}</a>`;
+
+  if (title && allowCaption) {
+    return `<figure class="blog-figure">${linkedTag}<figcaption>${escapeHtml(title)}</figcaption></figure>`;
+  }
+
+  return linkedTag;
+}
+
+async function optimizeContentImages(html: string): Promise<string> {
+  // An image alone in a paragraph can become a figure with a caption.
+  const standalone = /<p>\s*(<img\b[^>]*>)\s*<\/p>/gi;
+  let result = '';
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = standalone.exec(html))) {
+    result += html.slice(cursor, match.index);
+    result += await renderContentImage(match[1], true);
+    cursor = match.index + match[0].length;
+  }
+  result += html.slice(cursor);
+
+  // Remaining inline images (inside a paragraph with text).
+  const inline = /<img\b[^>]*>/gi;
+  let output = '';
+  let inlineCursor = 0;
+
+  while ((match = inline.exec(result))) {
+    output += result.slice(inlineCursor, match.index);
+    output += await renderContentImage(match[0], false);
+    inlineCursor = match.index + match[0].length;
+  }
+  output += result.slice(inlineCursor);
+
+  return output;
+}
+
 const headingRegex = /<h([1-6])([^>]*)>([\s\S]*?)<\/h\1>/g;
 const headings: { id: string; text: string; depth: number }[] = [];
 let contentWithHeadings = htmlContent.replace(headingRegex, (match: string, levelStr: string, attrs: string, inner: string) => {
@@ -80,6 +193,8 @@ let contentWithHeadings = htmlContent.replace(headingRegex, (match: string, leve
   const closeTag = `</h${level}>`;
   return `${openTag}${inner}${anchor}${closeTag}`;
 });
+
+const contentWithImages = await optimizeContentImages(contentWithHeadings);
 
 const numberedHeading = /^\d+[.)]\s/;
 type TocChild = { id: string; text: string; depth: number };
@@ -175,7 +290,7 @@ const articleThemeStyle = [
         </div>
       </header>
 
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-[92rem] mx-auto px-4 sm:px-6 lg:px-8">
       <div class="blog-layout">
       <div class="blog-reading">
       <div class="blog-article-content min-w-0 flex-1">
@@ -196,7 +311,7 @@ const articleThemeStyle = [
       )}
 
       {content.trim() ? (
-        <div class="prose" set:html={contentWithHeadings} />
+        <div class="prose" set:html={contentWithImages} />
       ) : (
         !post.pdf && <p class="text-sm text-[var(--text-dim)]">No content yet.</p>
       )}
@@ -289,6 +404,19 @@ const articleThemeStyle = [
         )}
       </div>
     )}
+
+    <div id="blog-lightbox" class="blog-lightbox no-print" hidden role="dialog" aria-modal="true" aria-label="Image preview">
+      <button type="button" class="blog-lightbox-btn blog-lightbox-close" data-lightbox-close aria-label="Close image preview">&times;</button>
+      <div class="blog-lightbox-stage" data-lightbox-stage>
+        <img id="blog-lightbox-img" data-lightbox-img alt="" />
+      </div>
+      <div class="blog-lightbox-toolbar">
+        <button type="button" class="blog-lightbox-btn" data-lightbox-zoom-out aria-label="Zoom out">&minus;</button>
+        <span id="blog-lightbox-zoom" class="blog-lightbox-zoom">100%</span>
+        <button type="button" class="blog-lightbox-btn" data-lightbox-zoom-in aria-label="Zoom in">+</button>
+        <button type="button" class="blog-lightbox-btn" data-lightbox-reset aria-label="Reset zoom">Reset</button>
+      </div>
+    </div>
   </article>
 
   <Footer />
@@ -400,6 +528,144 @@ const articleThemeStyle = [
   })();
 </script>
 
+<script is:inline>
+  (function () {
+    var lightbox = document.getElementById('blog-lightbox');
+    if (!lightbox) return;
+
+    var lightboxImg = document.getElementById('blog-lightbox-img');
+    var stage = lightbox.querySelector('[data-lightbox-stage]');
+    var zoomLabel = document.getElementById('blog-lightbox-zoom');
+    var closeBtn = lightbox.querySelector('[data-lightbox-close]');
+    var trigger = null;
+    var scale = 1;
+    var offsetX = 0;
+    var offsetY = 0;
+    var dragging = false;
+    var dragStartX = 0;
+    var dragStartY = 0;
+    var dragStartOffsetX = 0;
+    var dragStartOffsetY = 0;
+    var previousOverflow = '';
+
+    function applyTransform() {
+      lightboxImg.style.transform = 'translate(' + offsetX + 'px, ' + offsetY + 'px) scale(' + scale + ')';
+      zoomLabel.textContent = Math.round(scale * 100) + '%';
+    }
+
+    function resetZoom() {
+      scale = 1;
+      offsetX = 0;
+      offsetY = 0;
+      applyTransform();
+    }
+
+    function setZoom(next) {
+      scale = Math.min(5, Math.max(1, next));
+      if (scale === 1) {
+        offsetX = 0;
+        offsetY = 0;
+      }
+      applyTransform();
+    }
+
+    function openLightbox(link) {
+      var source = link.querySelector('img');
+      trigger = link;
+      lightboxImg.src = link.getAttribute('href') || '';
+      lightboxImg.alt = source ? (source.getAttribute('alt') || '') : '';
+      previousOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      lightbox.hidden = false;
+      resetZoom();
+      closeBtn.focus();
+    }
+
+    function closeLightbox() {
+      lightbox.hidden = true;
+      lightboxImg.removeAttribute('src');
+      lightboxImg.style.transform = '';
+      document.body.style.overflow = previousOverflow;
+      if (trigger) {
+        trigger.focus();
+        trigger = null;
+      }
+    }
+
+    document.querySelectorAll('.blog-image-link').forEach(function (link) {
+      link.addEventListener('click', function (event) {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        openLightbox(link);
+      });
+    });
+
+    closeBtn.addEventListener('click', closeLightbox);
+
+    lightbox.addEventListener('click', function (event) {
+      if (event.target === lightbox || event.target === stage) closeLightbox();
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (lightbox.hidden) return;
+      if (event.key === 'Escape') {
+        closeLightbox();
+      } else if (event.key === '+' || event.key === '=') {
+        setZoom(scale + 0.25);
+      } else if (event.key === '-') {
+        setZoom(scale - 0.25);
+      } else if (event.key === '0') {
+        resetZoom();
+      }
+    });
+
+    lightbox.querySelector('[data-lightbox-zoom-in]').addEventListener('click', function () {
+      setZoom(scale + 0.5);
+    });
+    lightbox.querySelector('[data-lightbox-zoom-out]').addEventListener('click', function () {
+      setZoom(scale - 0.5);
+    });
+    lightbox.querySelector('[data-lightbox-reset]').addEventListener('click', resetZoom);
+
+    stage.addEventListener('wheel', function (event) {
+      if (lightbox.hidden) return;
+      event.preventDefault();
+      setZoom(scale + (event.deltaY < 0 ? 0.25 : -0.25));
+    }, { passive: false });
+
+    lightboxImg.addEventListener('dblclick', function () {
+      setZoom(scale > 1 ? 1 : 2);
+    });
+
+    lightboxImg.addEventListener('pointerdown', function (event) {
+      if (scale <= 1) return;
+      dragging = true;
+      dragStartX = event.clientX;
+      dragStartY = event.clientY;
+      dragStartOffsetX = offsetX;
+      dragStartOffsetY = offsetY;
+      lightboxImg.classList.add('is-dragging');
+      try { lightboxImg.setPointerCapture(event.pointerId); } catch (e) {}
+    });
+
+    lightboxImg.addEventListener('pointermove', function (event) {
+      if (!dragging) return;
+      offsetX = dragStartOffsetX + (event.clientX - dragStartX);
+      offsetY = dragStartOffsetY + (event.clientY - dragStartY);
+      applyTransform();
+    });
+
+    function endDrag(event) {
+      if (!dragging) return;
+      dragging = false;
+      lightboxImg.classList.remove('is-dragging');
+      try { lightboxImg.releasePointerCapture(event.pointerId); } catch (e) {}
+    }
+    lightboxImg.addEventListener('pointerup', endDrag);
+    lightboxImg.addEventListener('pointercancel', endDrag);
+  })();
+</script>
+
 <style is:global>
 .prose { color: var(--text-muted); line-height: 1.75; }
 .prose h1 { font-size: 1.75rem; font-weight: 700; color: var(--text); margin: 1.5rem 0 0.75rem; }
@@ -420,7 +686,104 @@ const articleThemeStyle = [
 .prose th, .prose td { border: 1px solid var(--border); padding: 0.5rem 0.75rem; text-align: left; }
 .prose th { background: var(--bg-elevated); font-weight: 600; color: var(--text); }
 .prose hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
-.prose img { max-width: 100%; height: auto; border-radius: 8px; margin: 1rem 0; border: 1px solid var(--border); }
+.prose img { display: block; max-width: 100%; height: auto; border-radius: 8px; margin: 1.25rem auto; border: 1px solid var(--border); }
+.prose figure.blog-figure { margin: 1.5rem 0; }
+.prose figure.blog-figure img { width: 100%; margin: 0; }
+.prose figcaption { margin-top: 0.5rem; text-align: center; font-size: 0.8125rem; color: var(--text-dim); font-style: normal; }
+.blog-image-link { display: block; cursor: zoom-in; text-decoration: none; border-radius: 8px; }
+.blog-image-link--inline { display: inline-block; vertical-align: middle; }
+.blog-image-link:focus-visible { outline: 2px solid var(--blog-accent); outline-offset: 3px; }
+.blog-image-link img { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+.blog-image-link--block:hover img,
+.blog-image-link--block:focus-visible img {
+  transform: scale(1.015);
+  box-shadow: 0 18px 46px -26px rgba(0, 0, 0, 0.95);
+}
+.blog-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(3, 7, 18, 0.94);
+  backdrop-filter: blur(8px);
+}
+.blog-lightbox[hidden] { display: none; }
+.blog-lightbox-stage {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: zoom-out;
+}
+.blog-lightbox-stage img {
+  width: auto;
+  height: auto;
+  max-width: 94vw;
+  max-height: 86vh;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 30px 90px -30px rgba(0, 0, 0, 0.9);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  transform-origin: center center;
+  transition: transform 0.12s ease-out;
+}
+.blog-lightbox-stage img.is-dragging { cursor: grabbing; transition: none; }
+.blog-lightbox-btn {
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 0.875rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.blog-lightbox-btn:hover { color: var(--blog-accent); border-color: var(--blog-accent); }
+.blog-lightbox-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.5rem;
+}
+.blog-lightbox-toolbar {
+  position: absolute;
+  z-index: 2;
+  bottom: 1.25rem;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(9, 16, 30, 0.85);
+  transform: translateX(-50%);
+}
+.blog-lightbox-zoom {
+  min-width: 3.25rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+@media print {
+  .blog-lightbox { display: none !important; }
+}
 
 /* Let the article text use the full content column (sidebar collapse/expand) */
 .blog-article .prose { max-width: none; }
@@ -499,7 +862,7 @@ const articleThemeStyle = [
 /* Phase 2: heading-based reading aids and prose polish */
 .blog-toc {
   flex: 0 0 auto;
-  width: 240px;
+  width: 220px;
   padding: 0.5rem;
   border: 1px solid var(--blog-accent-line);
   border-radius: 12px;
@@ -639,7 +1002,7 @@ const articleThemeStyle = [
 /* Sidebar layout: article content + separate TOC panel */
 .blog-layout {
   display: flex;
-  gap: 2rem;
+  gap: 1.5rem;
   align-items: flex-start;
 }
 .blog-layout > .blog-reading {
@@ -648,7 +1011,10 @@ const articleThemeStyle = [
 }
 .blog-article-content { min-width: 0; }
 @media (max-width: 900px) {
-  .blog-layout { flex-direction: column; }
+  /* Stretch children to the screen width; flex-start would size them to their
+     max-content width and make wide code blocks/ASCII diagrams overflow. */
+  .blog-layout { flex-direction: column; align-items: stretch; }
+  .blog-layout > .blog-reading { width: 100%; flex: none; }
   .blog-toc,
   .blog-toc.is-collapsed { width: 100%; }
   .blog-toc.is-collapsed .blog-toc-toggle {
@@ -666,7 +1032,7 @@ const articleThemeStyle = [
   font-size: 1.12rem;
   font-style: italic;
 }
-.blog-dropcap {
+.blog-dropcap::first-letter {
   float: left;
   font-size: 3.25rem;
   line-height: 0.85;
@@ -793,7 +1159,7 @@ const articleThemeStyle = [
   .prose pre { background: #f5f5f5 !important; border: 1px solid #ccc !important; white-space: pre-wrap; word-break: break-word; }
   .prose code { background: #f0f0f0 !important; border-color: #ccc !important; color: #000 !important; }
   .prose blockquote { color: #333 !important; border-left-color: #000 !important; background: none !important; }
-  .blog-dropcap { float: none !important; font-size: inherit !important; padding: 0 !important; color: #111 !important; }
+  .blog-dropcap::first-letter { float: none !important; font-size: inherit !important; padding: 0 !important; color: #111 !important; }
   .prose table, .prose th, .prose td { border-color: #999 !important; }
   .blog-hero { display: block !important; width: 100% !important; height: auto !important; min-height: 0 !important; max-height: none !important; background: #fff !important; margin: 0 0 10pt !important; }
   .blog-hero img { position: static !important; height: auto !important; max-height: 90mm; object-fit: cover; width: 100%; break-inside: avoid; }

@@ -64,6 +64,32 @@ Public GitHub sources use `"type": "github"`, `"repo"`, `"branch"`, and optional
 
 ---
 
+## Images in Blog Posts
+
+Add images with standard Markdown inside `portfolio-data/blogs/<slug>/post.md`:
+
+```md
+![Sysmon event view](/images/sysmon-events.png)
+
+![Lab topology](/images/lab-topology.png "Figure 1 — Segmented lab network")
+```
+
+- **Optimized images:** put the file in `src/assets/images/` and reference it as `/images/<filename>`. Astro converts it to WebP and generates responsive `srcset` sizes automatically.
+- **Public images:** files in `public/images/` work too with the same path, but they are served as-is (no optimization).
+- **Remote images:** full `https://` URLs work and render as-is.
+- The optional Markdown title (second quoted string) is displayed as a centered caption below the image.
+
+Obsidian-style wiki embeds also work:
+
+```md
+![[lab-topology.png]]
+![[lab-topology.png|Figure 1 — Segmented lab network]]
+```
+
+A bare filename is matched against `src/assets/images` first, then `public/images`.
+
+---
+
 ## How to Use
 
 ### CLI — create new content interactively

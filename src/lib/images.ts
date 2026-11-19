@@ -29,6 +29,18 @@ const localImages: Record<string, ImageMetadata> = {
   '/certs/NetworkingBasics.png': networkingBasicsCert,
 };
 
+// Also pick up any image dropped into src/assets (e.g. a new blog screenshot
+// in src/assets/images/foo.png) so markdown can reference it as /images/foo.png.
+const assetModules = import.meta.glob<ImageMetadata>('../assets/**/*.{png,jpg,jpeg,webp,avif,gif,svg}', {
+  eager: true,
+  import: 'default',
+});
+
+for (const [modulePath, image] of Object.entries(assetModules)) {
+  const publicPath = modulePath.replace(/^\.\.\/assets/, '');
+  if (!localImages[publicPath]) localImages[publicPath] = image;
+}
+
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 function normalizePath(src: string): string {
@@ -57,6 +69,30 @@ export function resolveImage(src?: string | null): ImageMetadata | string | unde
 
   const path = normalizePath(src);
   return localImages[path] ?? path;
+}
+
+/**
+ * Resolve an Obsidian-style embed name (e.g. `![[diagram.png]]`) to a public
+ * path. A bare filename is matched against src/assets first, then falls back
+ * to /images/<filename> (public/images).
+ */
+export function resolveImageByName(name: string): string {
+  const trimmed = name.trim().replace(/^\.\//, '');
+  if (!trimmed) return '';
+
+  if (/^(https?:)?\/\//i.test(trimmed) || trimmed.startsWith('data:')) {
+    return trimmed;
+  }
+
+  if (trimmed.includes('/')) {
+    return normalizePath(trimmed);
+  }
+
+  const match = Object.keys(localImages).find(
+    (key) => key.slice(key.lastIndexOf('/') + 1) === trimmed,
+  );
+
+  return match ?? `/images/${trimmed}`;
 }
 
 

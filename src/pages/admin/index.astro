@@ -241,7 +241,7 @@ function buildForm(type,it){
      +inp('Related Investigations','f-ri',arr(d.relatedInvestigations),'slug-of-investigation','Comma-separated slugs')
      +inp('Related Projects','f-rp',arr(d.relatedProjects),'slug-of-project','Comma-separated slugs')
      +inp('PDF URL','f-pdf',d.pdf,'','Optional PDF article URL')
-     +ta('Article Content (Markdown)','f-md',d._content||'','Write article in Markdown. Use ![alt](url) for images...');
+     +ta('Article Content (Markdown)','f-md',d._content||'','Write article in Markdown. Embed images with ![alt](/images/name.png) or ![[name.png]], and add the file to src/assets/images (optimized) or public/images. Caption: ![alt](/images/name.png "Caption") or ![[name.png|Caption]].');
   }
   return '<div class="ed"><div class="ed-h"><h2>'+(isE?'Edit':'New')+' '+lbl+'</h2><div class="ed-a"><button class="b" data-act="backBtn">Back</button><button class="b p" data-act="saveBtn2">Save</button></div></div>'+f+'<div class="sb"><button class="b" data-act="cancelBtn">Cancel</button><button class="b p" data-act="saveBtn">Save '+lbl+'</button></div></div>';
 }

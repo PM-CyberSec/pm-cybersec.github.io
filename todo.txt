@@ -1,0 +1,2 @@
+ Astro tells me 'This image could be replaced with the Image component to improve performance.' can you do this improvement ?
+ adjsut the og.png size to fit completly inside the message og image. right now it is bigger and only a small part from the middle of the pic appears

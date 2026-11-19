@@ -387,7 +387,7 @@ In my case, the environment uses QEMU/KVM with virt-manager.
 
 The VM network interface can be configured through the virt-manager interface:
 
-_[virt-manager-NIC.png]_
+![[virt-manager-NIC.png]]
 
 The important relationship is:
 
